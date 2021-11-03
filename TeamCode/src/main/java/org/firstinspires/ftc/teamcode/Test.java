@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-@TeleOp(name = "13 Drive Train Test", group = "15118")
+@TeleOp(name = "TESTCHAMP", group = "15118")
 public class Test extends LinearOpMode {
     DcMotor fr, fl, br, bl;
     @Override
@@ -16,7 +16,7 @@ public class Test extends LinearOpMode {
 
         while(opModeIsActive())
         {
-            if (gamepad1.left_stick_x != 0 || gamepad1.right_stick_x != 0 || gamepad1.left_stick_y != 0)
+            if(gamepad1.left_stick_x != 0 || gamepad1.right_stick_x != 0 || gamepad1.left_stick_y != 0)
             {
                 move(gamepad1.left_stick_x, gamepad1.right_stick_x, gamepad1.left_stick_y);
             }
