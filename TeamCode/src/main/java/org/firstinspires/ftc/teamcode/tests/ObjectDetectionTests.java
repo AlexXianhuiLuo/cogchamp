@@ -164,17 +164,19 @@ public class ObjectDetectionTests extends LinearOpMode
 
         int secondDivider = 2*(cameraSize.getWidth()/3); //To split bitmap in thirds
 
-        int first = 0;
-        int second = 0;
-        int third = 0;
+        long first = 0;
+        long second = 0;
+        long third = 0;
 
         for(int i = 0; i < firstDivider; i++)
         {
             for(int j = 0; j < cameraSize.getHeight(); j++)
             {
                 int colour = frame.getPixel(i, j);
-                if((Color.green(colour) > Color.red(colour))&& (Color.green(colour) > Color.blue(colour)));
-                first += 1;
+                if((Color.green(colour) > Color.red(colour) + 10) && (Color.green(colour) > Color.blue(colour) + 10))
+                {
+                    first += 1;
+                }
             }
         }
         for(int i = firstDivider; i < secondDivider; i++)
@@ -182,8 +184,10 @@ public class ObjectDetectionTests extends LinearOpMode
             for(int j = 0; j < cameraSize.getHeight(); j++)
             {
                 int colour = frame.getPixel(i, j);
-                if((Color.green(colour) > Color.red(colour))&& (Color.green(colour) > Color.blue(colour)));
-                second += 1;
+                if((Color.green(colour) > Color.red(colour) + 10)&& (Color.green(colour) > Color.blue(colour) + 10))
+                {
+                    second += 1;
+                }
             }
         }
         for(int i = secondDivider; i < cameraSize.getWidth(); i++)
@@ -191,8 +195,10 @@ public class ObjectDetectionTests extends LinearOpMode
             for(int j = 0; j < cameraSize.getHeight(); j++)
             {
                 int colour = frame.getPixel(i, j);
-                if((Color.green(colour) > Color.red(colour))&& (Color.green(colour) > Color.blue(colour)));
-                third += 1;
+                if((Color.green(colour) > Color.red(colour) + 10)&& (Color.green(colour) > Color.blue(colour) + 10));
+                {
+                    third += 1;
+                }
             }
         }
         if((first > second) && (first > third))

@@ -1,43 +1,15 @@
-/* Copyright (c) 2020 FIRST. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided that
- * the following conditions are met:
- *
- * Redistributions of source code must retain the above copyright notice, this list
- * of conditions and the following disclaimer.
- *
- * Redistributions in binary form must reproduce the above copyright notice, this
- * list of conditions and the following disclaimer in the documentation and/or
- * other materials provided with the distribution.
- *
- * Neither the name of FIRST nor the names of its contributors may be used to endorse or
- * promote products derived from this software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS
- * LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-package org.firstinspires.ftc.robotcontroller.external.samples;
+package org.firstinspires.ftc.teamcode.opmodes.auto;
 
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.os.Handler;
 
 import androidx.annotation.NonNull;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
@@ -66,50 +38,34 @@ import java.util.Locale;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-/**
- * This OpMode illustrates how to open a webcam and retrieve images from it. It requires a configuration
- * containing a webcam with the default name ("Webcam 1"). When the opmode runs, pressing the 'A' button
- * will cause a frame from the camera to be written to a file on the device, which can then be retrieved
- * by various means (e.g.: Device File Explorer in Android Studio; plugging the device into a PC and
- * using Media Transfer; ADB; etc)
- */
-@TeleOp(name="Concept: Webcam", group ="Concept")
-public class ConceptWebcam extends LinearOpMode {
+public class Auto15118 extends LinearOpMode
+{
+    private static final String TAG = "Cogchamp Auto Superclass";
 
-    //----------------------------------------------------------------------------------------------
-    // State
-    //----------------------------------------------------------------------------------------------
-
-    private static final String TAG = "Webcam Sample";
-
-    /** How long we are to wait to be granted permission to use the camera before giving up. Here,
-     * we wait indefinitely */
     private static final int secondsPermissionTimeout = Integer.MAX_VALUE;
 
-    /** State regarding our interaction with the camera */
-    private CameraManager cameraManager;
-    private WebcamName cameraName;
-    private Camera camera;
-    private CameraCaptureSession cameraCaptureSession;
+    DcMotor fr, fl, br, bl;
+    DcMotor intakeMotor, linearSlideMotor, carouselMotor;
+    Servo intakeLifter, outtakeGate;
 
-    /** The queue into which all frames from the camera are placed as they become available.
-     * Frames which are not processed by the OpMode are automatically discarded. */
-    private EvictingBlockingQueue<Bitmap> frameQueue;
+    CameraManager cameraManager;
+    WebcamName cameraName;
+    Camera camera;
+    CameraCaptureSession cameraCaptureSession;
 
-    /** State regarding where and how to save frames when the 'A' button is pressed. */
-    private int captureCounter = 0;
-    private File captureDirectory = AppUtil.ROBOT_DATA_DIR;
+    int captureCounter = 0;
+    File captureDirectory = AppUtil.ROBOT_DATA_DIR;
 
-    /** A utility object that indicates where the asynchronous callbacks from the camera
-     * infrastructure are to run. In this OpMode, that's all hidden from you (but see {@link #startCamera}
-     * if you're curious): no knowledge of multi-threading is needed here. */
-    private Handler callbackHandler;
+    EvictingBlockingQueue<Bitmap> frameQueue;
 
-    //----------------------------------------------------------------------------------------------
-    // Main OpMode entry
-    //----------------------------------------------------------------------------------------------
+    Handler callbackHandler;
 
-    @Override public void runOpMode() {
+    @Override
+    public void runOpMode() throws InterruptedException
+    {
+        initialize();
+
+        waitForStart();
 
         callbackHandler = CallbackLooper.getDefault().getHandler();
 
@@ -118,54 +74,92 @@ public class ConceptWebcam extends LinearOpMode {
 
         initializeFrameQueue(2);
         AppUtil.getInstance().ensureDirectoryExists(captureDirectory);
+    }
 
-        try {
-            openCamera();
-            if (camera == null) return;
-
-            startCamera();
-            if (cameraCaptureSession == null) return;
-
-            telemetry.addData(">", "Press Play to start");
-            telemetry.update();
-            waitForStart();
-            telemetry.clear();
-            telemetry.addData(">", "Started...Press 'A' to capture frame");
-
-            boolean buttonPressSeen = false;
-            boolean captureWhenAvailable = false;
-            while (opModeIsActive()) {
-
-                boolean buttonIsPressed = gamepad1.a;
-                if (buttonIsPressed && !buttonPressSeen) {
-                    captureWhenAvailable = true;
-                }
-                buttonPressSeen = buttonIsPressed;
-
-                if (captureWhenAvailable) {
-                    Bitmap bmp = frameQueue.poll();
-                    if (bmp != null) {
-                        captureWhenAvailable = false;
-                        onNewFrame(bmp);
-                    }
-                }
-
-                telemetry.update();
-            }
-        } finally {
-            closeCamera();
+    public int getShippingElementPosition(Bitmap frame, int loopCount)
+    {
+        if(loopCount >= 1000)
+        {
+            return -1;
         }
+        if(frame == null)
+        {
+            return getShippingElementPosition(frame, loopCount + 1); //Recurs if frame is null
+        }
+        Size cameraSize = cameraName.getCameraCharacteristics().getDefaultSize(ImageFormat.YUY2); // Just gets default size of camera don't worry about this spaghetti
+
+        int firstDivider = cameraSize.getWidth()/3; //To split bitmap in thirds
+
+        int secondDivider = 2*(cameraSize.getWidth()/3); //To split bitmap in thirds
+
+        int first = 0;
+        int second = 0;
+        int third = 0;
+
+        for(int i = 0; i < firstDivider; i++)
+        {
+            for(int j = 0; j < cameraSize.getHeight(); j++)
+            {
+                int colour = frame.getPixel(i, j);
+                if((Color.green(colour) > Color.red(colour))&& (Color.green(colour) > Color.blue(colour)));
+                first += 1;
+            }
+        }
+        for(int i = firstDivider; i < secondDivider; i++)
+        {
+            for(int j = 0; j < cameraSize.getHeight(); j++)
+            {
+                int colour = frame.getPixel(i, j);
+                if((Color.green(colour) > Color.red(colour))&& (Color.green(colour) > Color.blue(colour)));
+                second += 1;
+            }
+        }
+        for(int i = secondDivider; i < cameraSize.getWidth(); i++)
+        {
+            for(int j = 0; j < cameraSize.getHeight(); j++)
+            {
+                int colour = frame.getPixel(i, j);
+                if((Color.green(colour) > Color.red(colour))&& (Color.green(colour) > Color.blue(colour)));
+                third += 1;
+            }
+        }
+        if((first > second) && (first > third))
+        {
+            return 0;
+        } else if((second > first) && (second > third))
+        {
+            return 1;
+        } else if((third > first) && (third > second))
+        {
+            return 2;
+        }
+        return -1;
     }
 
-    /** Do something with the frame */
-    private void onNewFrame(Bitmap frame) {
-        saveBitmap(frame);
-        frame.recycle(); // not strictly necessary, but helpful
-    }
+    public void initialize()
+    {
+        /**<----- MOTORS ----->*/
+        fr = hardwareMap.get(DcMotor.class, "fr");
+        fl = hardwareMap.get(DcMotor.class, "fl");
+        br = hardwareMap.get(DcMotor.class, "br");
+        bl = hardwareMap.get(DcMotor.class, "bl");
+        fr.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        fl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        br.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        bl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-    //----------------------------------------------------------------------------------------------
-    // Camera operations
-    //----------------------------------------------------------------------------------------------
+        /**<----- INTAKE ----->*/
+        intakeMotor = hardwareMap.get(DcMotor.class, "intake");
+        intakeLifter = hardwareMap.get(Servo.class,"intake lifter");
+
+        /**<----- OUTTAKE ----->*/
+        linearSlideMotor = hardwareMap.get(DcMotor.class,"outtake");
+        outtakeGate = hardwareMap.get(Servo.class, "outtake gate");
+        linearSlideMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        /**<----- CAROUSEL ----->*/
+        carouselMotor = hardwareMap.get(DcMotor.class,"carousel");
+    }
 
     private void initializeFrameQueue(int capacity) {
         /** The frame queue will automatically throw away bitmap frames if they are not processed
@@ -217,23 +211,23 @@ public class ConceptWebcam extends LinearOpMode {
                         /** The session is ready to go. Start requesting frames */
                         final CameraCaptureRequest captureRequest = camera.createCaptureRequest(imageFormat, size, fps);
                         session.startCapture(captureRequest,
-                            new CameraCaptureSession.CaptureCallback() {
-                                @Override public void onNewFrame(@NonNull CameraCaptureSession session, @NonNull CameraCaptureRequest request, @NonNull CameraFrame cameraFrame) {
-                                    /** A new frame is available. The frame data has <em>not</em> been copied for us, and we can only access it
-                                     * for the duration of the callback. So we copy here manually. */
-                                    Bitmap bmp = captureRequest.createEmptyBitmap();
-                                    cameraFrame.copyToBitmap(bmp);
-                                    frameQueue.offer(bmp);
-                                }
-                            },
-                            Continuation.create(callbackHandler, new CameraCaptureSession.StatusCallback() {
-                                @Override public void onCaptureSequenceCompleted(@NonNull CameraCaptureSession session, CameraCaptureSequenceId cameraCaptureSequenceId, long lastFrameNumber) {
-                                    RobotLog.ii(TAG, "capture sequence %s reports completed: lastFrame=%d", cameraCaptureSequenceId, lastFrameNumber);
-                                }
-                            })
+                                new CameraCaptureSession.CaptureCallback() {
+                                    @Override public void onNewFrame(@NonNull CameraCaptureSession session, @NonNull CameraCaptureRequest request, @NonNull CameraFrame cameraFrame) {
+                                        /** A new frame is available. The frame data has <em>not</em> been copied for us, and we can only access it
+                                         * for the duration of the callback. So we copy here manually. */
+                                        Bitmap bmp = captureRequest.createEmptyBitmap();
+                                        cameraFrame.copyToBitmap(bmp);
+                                        frameQueue.offer(bmp);
+                                    }
+                                },
+                                Continuation.create(callbackHandler, new CameraCaptureSession.StatusCallback() {
+                                    @Override public void onCaptureSequenceCompleted(@NonNull CameraCaptureSession session, CameraCaptureSequenceId cameraCaptureSequenceId, long lastFrameNumber) {
+                                        RobotLog.ii(TAG, "capture sequence %s reports completed: lastFrame=%d", cameraCaptureSequenceId, lastFrameNumber);
+                                    }
+                                })
                         );
                         synchronizer.finish(session);
-                    } catch (CameraException|RuntimeException e) {
+                    } catch (CameraException |RuntimeException e) {
                         RobotLog.ee(TAG, e, "exception starting capture");
                         error("exception starting capture");
                         session.close();
@@ -273,10 +267,6 @@ public class ConceptWebcam extends LinearOpMode {
             camera = null;
         }
     }
-
-    //----------------------------------------------------------------------------------------------
-    // Utilities
-    //----------------------------------------------------------------------------------------------
 
     private void error(String msg) {
         telemetry.log().add(msg);
