@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 @TeleOp(name = "Cogchamp TeleOp", group = "15118")
 public class TeleOp15118 extends LinearOpMode {
     private final float DRIVETRAIN_SPEED_MODIFIER = 1;
+    private final float INTAKE_SERVO_LIMIT = 0.575;
 
     DcMotor fr, fl, br, bl;
     DcMotor intakeMotor, linearSlideMotor, carouselMotor;
@@ -62,14 +63,14 @@ public class TeleOp15118 extends LinearOpMode {
                 intakeMotor.setPower(0);
             }
             //TEMP DON'T KNOW POSITIONS OR IF SUPPOSED TO SET NEGATIVE POSITION OR 0 TO RESET
-            if(gamepad1.right_bumper)
-            {
-                intakeLifter.setPosition(1);
-            }
             if(gamepad1.left_bumper)
-            {
-                intakeLifter.setPosition(0);
-            }
+			{
+				intakeLifter.setPosition(INTAKE_SERVO_LIMIT); // goes down
+			}
+			if(gamepad1.right_bumper)
+			{
+				intakeLifter.setPosition(0); //goes up
+			}
             /**<----- INTAKE ----->*/
 
             /**<----- OUTTAKE ----->*/
