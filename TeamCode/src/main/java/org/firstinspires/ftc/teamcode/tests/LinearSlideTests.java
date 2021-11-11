@@ -24,14 +24,11 @@ public class LinearSlideTests extends LinearOpMode
             if(gamepad1.right_trigger != 0 || gamepad1.left_trigger != 0)
             {
                 if (gamepad1.right_trigger != 0) {
-                    linearSlide.setPower(gamepad1.right_trigger);
+                    linearSlide.setPower(-gamepad1.right_trigger * .5);
                 }
                 if (gamepad1.left_trigger != 0) {
-                    linearSlide.setPower(gamepad1.left_trigger);
+                    linearSlide.setPower(gamepad1.left_trigger * .5);
                 }
-            } else
-            {
-                linearSlide.setPower(0);
             }
             if(gamepad1.a)
             {
@@ -44,10 +41,10 @@ public class LinearSlideTests extends LinearOpMode
                 {
                     if(linearSlide.getCurrentPosition() > linearSlide.getTargetPosition())
                     {
-                        linearSlide.setPower(-.5);
+                        linearSlide.setPower(-.1);
                     } else if(linearSlide.getCurrentPosition() < linearSlide.getTargetPosition())
                     {
-                        linearSlide.setPower(.5);
+                        linearSlide.setPower(.1);
                     } else
                     {
                         break;

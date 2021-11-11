@@ -20,10 +20,10 @@ public class ServoPosTests extends LinearOpMode
         waitForStart();
 
         double upBoundIn = 0;
-        double downBoundIn = 0;
+        double downBoundIn = intakeLifter.getPosition();
 
         double upBoundOut = 0;
-        double downBoundOut = 0;
+        double downBoundOut = outtakeGate.getPosition();
 
         while(opModeIsActive())
         {
@@ -50,7 +50,7 @@ public class ServoPosTests extends LinearOpMode
             {
                 intakeLifter.setPosition(upBoundIn);
                 sleep(250);
-                intakeLifter.setPosition(upBoundOut);
+                intakeLifter.setPosition(downBoundIn);
                 sleep(250);
             }
             if(gamepad1.b)
