@@ -10,7 +10,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.teamcode.opmodes.CogchampOpMode;
 
-@Autonomous(name = "IMU AUTO", group = "COGCHAMP AUTO")
+@Autonomous(name = "IMU AUTO", group = "AUTOCHAMP")
 public class IMUAuto extends CogchampOpMode {
     @Override
     public void runOpMode() throws InterruptedException {

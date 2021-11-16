@@ -17,7 +17,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
 
 import java.util.Locale;
 
-@TeleOp(name = "IMU TESTING", group = "TESTS")
+@TeleOp(name = "IMU TESTING", group = "TESTCHAMP")
 public class IMUTests extends LinearOpMode {
     //----------------------------------------------------------------------------------------------
     // State

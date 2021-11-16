@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@TeleOp(name = "Cogchamp TeleOp", group = "15118")
+@TeleOp(name = "Cogchamp TeleOp", group = "TELECHAMP")
 public class TeleOp15118 extends LinearOpMode {
     private final float DRIVETRAIN_SPEED_MODIFIER = 1;
 

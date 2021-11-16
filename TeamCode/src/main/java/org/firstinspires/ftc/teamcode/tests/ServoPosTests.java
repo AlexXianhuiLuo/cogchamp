@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@TeleOp(name = "SERVO TESTS", group = "15118")
+@TeleOp(name = "SERVO TESTS", group = "TESTCHAMP")
 public class ServoPosTests extends LinearOpMode
 {
     DcMotor fr, fl, br, bl;
