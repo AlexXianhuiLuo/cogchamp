@@ -1,0 +1,50 @@
+Control Hub
+    Motors
+        0 : fr
+        1 : fl
+        2 : br
+        3 : bl
+    Servos
+        0 : outtake gate
+        1 : intake lifter left
+        2 : intake lifter right
+        3 : N / A
+    Digital Devices
+        N / A
+    Analog Input Devices
+        N / A
+    I2C Bus 0
+        0 : imu
+    I2C Bus 1
+        N / A
+    I2C Bus 2
+        N / A
+    I2C Bus 3
+        N / A
+
+Expansion Hub
+    Motors
+        0 : outtake
+        1 : carousel
+        2 : intake
+        3 : N / A
+    Servos
+        0 : N / A
+        1 : N / A
+        2 : N / A
+        3 : N / A
+    Digital Devices
+            N / A
+        Analog Input Devices
+            N / A
+        I2C Bus 0
+            N / A
+        I2C Bus 1
+            N / A
+        I2C Bus 2
+            N / A
+        I2C Bus 3
+            N / A
+
+Webcam
+    Webcam 1

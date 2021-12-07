@@ -1,10 +1,15 @@
-package org.firstinspires.ftc.teamcode.tests;
+package org.firstinspires.ftc.teamcode.opmodes.auto;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
@@ -17,11 +22,15 @@ import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
 
 import java.util.Locale;
 
-@TeleOp(name = "IMU TESTING", group = "TESTCHAMP m")
-public class IMUTests extends LinearOpMode {
+@Autonomous(name = "TEMP IMU AUTO", group = "AUTO")
+public class TempIMUAuto extends LinearOpMode {
     //----------------------------------------------------------------------------------------------
     // State
     //----------------------------------------------------------------------------------------------
+
+    DcMotor fr, fl, br, bl;
+    DcMotor intakeMotor, outtakeMotor, carouselMotor;
+    Servo intakeLifterL, intakeLifterR, outtakeGate;
 
     // The IMU sensor object
     BNO055IMU imu;
@@ -29,6 +38,8 @@ public class IMUTests extends LinearOpMode {
     // State used for updating telemetry
     Orientation angles;
     Acceleration gravity;
+
+    ElapsedTime runtime = new ElapsedTime();
 
     //----------------------------------------------------------------------------------------------
     // Main logic
@@ -55,17 +66,30 @@ public class IMUTests extends LinearOpMode {
 
         // Set up our telemetry dashboard
         composeTelemetry();
-
+        initialize();
         // Wait until we're told to go
         waitForStart();
 
         // Start the logging of measured acceleration
         imu.startAccelerationIntegration(new Position(), new Velocity(), 1000);
 
-        // Loop and update the dashboard
-        while (opModeIsActive()) {
-            telemetry.update();
-        }
+        timeMove(.75, 0 ,.5 ,0);
+        timeMove(1, .5, 0, 0);
+    }
+    public void drop()
+    {
+        outtakeGate.setPosition(.5);
+        sleep(250);
+        outtakeGate.setPosition(0);
+        sleep(250);
+    }
+
+    public int mmToTick(int millimeters)
+    {
+        //Math: ticks/TPR = mm/(pi*wheelDiameter) --> ticks = mm*TPR/pi*wheelDiameter
+        double ticksPerRoto = 384.5;
+        double wheelDiameter = 96;
+        return (int) ((millimeters*ticksPerRoto)/(Math.PI*wheelDiameter));
     }
 
     //----------------------------------------------------------------------------------------------
@@ -144,6 +168,33 @@ public class IMUTests extends LinearOpMode {
     }
 
     //----------------------------------------------------------------------------------------------
+    // Movement
+    //----------------------------------------------------------------------------------------------
+    public void timeMove(double seconds, double strafe, double forward, double turn)
+    {
+        //Following is just there if your robot is moving backwards, if it is then just uncomment it
+        runtime.reset();
+        while(opModeIsActive() && runtime.seconds() < seconds)
+        {
+            move(strafe, turn, forward);
+            telemetry.update();
+        }
+        move(0,0,0);
+    }
+
+    public void move(double strafe, double forward, double turn)
+    {
+        //Following is just there if your robot is moving backwards, if it is then just uncomment it
+        turn *= -1;
+        forward *= 1;
+        strafe *= 1;
+        fl.setPower(forward + turn + strafe);
+        fr.setPower(forward - turn + strafe);
+        bl.setPower(forward - turn - strafe);
+        br.setPower(forward + turn - strafe);
+    }
+
+    //----------------------------------------------------------------------------------------------
     // Formatting
     //----------------------------------------------------------------------------------------------
 
@@ -153,5 +204,29 @@ public class IMUTests extends LinearOpMode {
 
     String formatDegrees(double degrees){
         return String.format(Locale.getDefault(), "%.1f", AngleUnit.DEGREES.normalize(degrees));
+    }
+
+
+    public void initialize()
+    {
+        /**<----- MOTORS ----->*/
+        fr = hardwareMap.get(DcMotor.class, "fr");
+        fl = hardwareMap.get(DcMotor.class, "fl");
+        br = hardwareMap.get(DcMotor.class, "br");
+        bl = hardwareMap.get(DcMotor.class, "bl");
+        fl.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        /**<----- INTAKE ----->*/
+        intakeMotor = hardwareMap.get(DcMotor.class, "intake");
+        intakeLifterL = hardwareMap.get(Servo.class,"intake lifter left");
+        intakeLifterR = hardwareMap.get(Servo.class, "intake lifter right");
+
+        /**<----- OUTTAKE ----->*/
+        outtakeMotor = hardwareMap.get(DcMotor.class,"outtake");
+        outtakeGate = hardwareMap.get(Servo.class, "outtake gate");
+
+        /**<----- CAROUSEL ----->*/
+        carouselMotor = hardwareMap.get(DcMotor.class,"carousel");
+        carouselMotor.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 }
