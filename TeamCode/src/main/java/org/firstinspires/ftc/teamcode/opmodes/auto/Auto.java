@@ -120,7 +120,7 @@ public class Auto extends LinearOpMode
 
     public void forwards(boolean forward, int amount, int time_ms)
     {
-        if(!forward)
+        if(forward)
         {
             fr.setTargetPosition(amount);
             fl.setTargetPosition(amount);
@@ -171,19 +171,21 @@ public class Auto extends LinearOpMode
 
     public void raiseLvl1()
     {
-        raiseOuttake(1, 1); //TODO: Replace amounts
+        raiseOuttake(100, 1); //TODO: Replace amounts
     }
     public void raiseLvl2()
     {
-        raiseOuttake(1, 1); //TODO: Replace amounts
+        raiseOuttake(200, 1); //TODO: Replace amounts
     }
     public void raiseLvl3()
     {
-        raiseOuttake(1, 1); //TODO: Replace amounts
+
+        raiseOuttake(300, 1); //TODO: Replace amounts
     }
 
     public void lowerOuttake()
     {
+
         raiseOuttake(0, 5000);
     }
 

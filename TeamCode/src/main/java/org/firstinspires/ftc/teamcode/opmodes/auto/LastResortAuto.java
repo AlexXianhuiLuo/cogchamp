@@ -23,7 +23,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
 import java.util.Locale;
 
 @Autonomous(name = "TEMP IMU AUTO", group = "AUTO")
-public class TempIMUAuto extends LinearOpMode {
+public class LastResortAuto extends LinearOpMode {
     //----------------------------------------------------------------------------------------------
     // State
     //----------------------------------------------------------------------------------------------
