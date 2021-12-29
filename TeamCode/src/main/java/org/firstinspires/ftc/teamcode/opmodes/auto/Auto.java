@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.opmodes.auto;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -23,16 +22,16 @@ public class Auto extends LinearOpMode
 
     DcMotor fr, fl, br, bl;
 
-    DcMotor intakeMotor, outtakeMotor, carouselMotor;
+    DcMotor intakeMotor, outtakeMotor, carouselMotor, intakeLifter;
 
-    Servo intakeLifterL, intakeLifterR, outtakeGate;
+    Servo outtakeGate;
 
     Character startingPosition;
 
     @Override
     public void runOpMode() throws InterruptedException
     {
-        /**<----- OPENCV ----->*/
+        /*<----- OPENCV ----->*/
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
         GreenStartingPositionPipeline pipeline = new GreenStartingPositionPipeline();
@@ -46,22 +45,23 @@ public class Auto extends LinearOpMode
             @Override
             public void onError(int errorCode) { }
         });
-        /**<----- OPENCV ----->*/
+        /*<----- OPENCV ----->*/
 
         initialize();
 
         int leftCount = 0, centerCount = 0, rightCount = 0;
-        for(int i = 0; i < 10; i++)
+        for(int i = 0; i < 100; i++)
         {
-            if(pipeline.getPosition().equals("LEFT"))
-            {
-                leftCount++;
-            } else if(pipeline.getPosition().equals("CENTER"))
-            {
-                centerCount++;
-            } else if(pipeline.getPosition().equals("RIGHT"))
-            {
-                rightCount++;
+            switch (pipeline.getPosition()) {
+                case "LEFT":
+                    leftCount++;
+                    break;
+                case "CENTER":
+                    centerCount++;
+                    break;
+                case "RIGHT":
+                    rightCount++;
+                    break;
             }
             sleep(100);
         }
@@ -84,43 +84,41 @@ public class Auto extends LinearOpMode
         runtime.reset();
     }
 
-    public void gradualStop()
+    private void initialize()
     {
-        for(int i = 0; i < 10; i++)
-        {
-            fr.setPower(fr.getPower()/2);
-            fl.setPower(fl.getPower()/2);
-            br.setPower(br.getPower()/2);
-            bl.setPower(bl.getPower()/2);
-            sleep(5);
-        }
-        fl.setPower(0);
-        fr.setPower(0);
-        br.setPower(0);
-        bl.setPower(0);
+        /*<----- MOTORS ----->*/
+        fr = hardwareMap.get(DcMotor.class, "fr");
+        fl = hardwareMap.get(DcMotor.class, "fl");
+        br = hardwareMap.get(DcMotor.class, "br");
+        bl = hardwareMap.get(DcMotor.class, "bl");
+        fl.setDirection(DcMotorSimple.Direction.REVERSE);
+        br.setDirection(DcMotorSimple.Direction.REVERSE);
+        fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        br.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        bl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+
+        /*<----- INTAKE ----->*/
+        intakeMotor = hardwareMap.get(DcMotor.class, "intake");
+        intakeLifter = hardwareMap.get(DcMotor.class, "intake lifter");
+
+        /*<----- OUTTAKE ----->*/
+        outtakeMotor = hardwareMap.get(DcMotor.class,"outtake");
+        outtakeGate = hardwareMap.get(Servo.class, "outtake gate");
+        //outtakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        /*<----- CAROUSEL ----->*/
+        carouselMotor = hardwareMap.get(DcMotor.class,"carousel");
+        carouselMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        resetEncoders();
     }
 
-    public void strafe(boolean left, int amount, int time_ms)
-    {
-        if(!left)
-        {
-            fr.setTargetPosition(amount);
-            fl.setTargetPosition(-amount);
-            br.setTargetPosition(-amount);
-            bl.setTargetPosition(amount);
-        } else
-        {
-            fr.setTargetPosition(-amount);
-            fl.setTargetPosition(amount);
-            br.setTargetPosition(amount);
-            bl.setTargetPosition(-amount);
-        }
-        go(time_ms);
-    }
 
+    /*<------- MOVEMENT ------->*/
     public void forwards(boolean forward, int amount, int time_ms)
     {
-        if(forward)
+        if(!forward)
         {
             fr.setTargetPosition(amount);
             fl.setTargetPosition(amount);
@@ -137,7 +135,7 @@ public class Auto extends LinearOpMode
         go(time_ms);
     }
 
-    public void turn(boolean left, int amount, int time_ms)
+    public void strafe(boolean left, int amount, int time_ms)
     {
         if(!left)
         {
@@ -155,48 +153,64 @@ public class Auto extends LinearOpMode
         go(time_ms);
     }
 
-    public void raiseOuttake(int amount, int time_ms)
+    public void turn(boolean left, int amount, int time_ms)
     {
-        outtakeMotor.setTargetPosition(amount);
-        outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(1);
-        while(opModeIsActive() && runtime.milliseconds() < time_ms)
+        if(!left)
+        {
+            fr.setTargetPosition(-amount);
+            fl.setTargetPosition(amount);
+            br.setTargetPosition(amount);
+            bl.setTargetPosition(-amount);
+        } else
+        {
+            fr.setTargetPosition(amount);
+            fl.setTargetPosition(-amount);
+            br.setTargetPosition(-amount);
+            bl.setTargetPosition(amount);
+        }
+        go(time_ms);
+    }
+
+    public void setMotorPower(double power)
+    {
+        fl.setPower(power);
+        fr.setPower(power);
+        br.setPower(power);
+        bl.setPower(power);
+    }
+
+    private void go(int time_ms)
+    {
+        runtime.reset();
+        fr.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        fl.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        br.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        bl.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        setMotorPower(GLOBAL_SPEED_MODIFIER);
+
+        while(opModeIsActive() && runtime.milliseconds() < time_ms )
         {
             telemetry.addLine("RUNNING");
             telemetry.update();
         }
-        outtakeMotor.setPower(0);
-        outtakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-    }
+        setMotorPower(0);
 
-    public void raiseLvl1()
-    {
-        raiseOuttake(100, 1); //TODO: Replace amounts
-    }
-    public void raiseLvl2()
-    {
-        raiseOuttake(200, 1); //TODO: Replace amounts
-    }
-    public void raiseLvl3()
-    {
+        fr.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        fl.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        br.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        bl.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        raiseOuttake(300, 1); //TODO: Replace amounts
+        fr.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        fl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        br.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        bl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        telemetry.addLine("STOPPED");
+        telemetry.update();
     }
+    /*<------- MOVEMENT ------->*/
 
-    public void lowerOuttake()
-    {
-
-        raiseOuttake(0, 5000);
-    }
-
-    public void drop()
-    {
-        outtakeGate.setPosition(.5);
-        sleep(250);
-        outtakeGate.setPosition(0);
-        sleep(250);
-    }
-
+    /*<------- INTAKE ------->*/
     public void intake()
     {
         if(intakeMotor.getPower() == 0)
@@ -207,33 +221,102 @@ public class Auto extends LinearOpMode
             intakeMotor.setPower(0);
         }
     }
+    /*<------- INTAKE ------->*/
 
-    private void go(int time_ms)
+    /*<------- OUTTAKE ------->*/
+    public void raiseLvl1()
     {
+        outtakeMotor.setTargetPosition(50);
+        outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        outtakeMotor.setPower(.5);
         runtime.reset();
-        fr.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        fl.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        br.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        bl.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        fr.setPower(GLOBAL_SPEED_MODIFIER);
-        fl.setPower(GLOBAL_SPEED_MODIFIER);
-        br.setPower(GLOBAL_SPEED_MODIFIER);
-        bl.setPower(GLOBAL_SPEED_MODIFIER);
-
-        while(opModeIsActive() && runtime.milliseconds() < time_ms)
+        while(opModeIsActive() && runtime.milliseconds() < 100 )
         {
             telemetry.addLine("RUNNING");
             telemetry.update();
         }
-
-        gradualStop();
-
-        fr.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        fl.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        br.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        bl.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        outtakeMotor.setPower(0);
+        drop();
+        sleep(100);
+        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        outtakeMotor.setTargetPosition(-50);
+        outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        outtakeMotor.setPower(.5);
+        runtime.reset();
+        while(opModeIsActive() && runtime.milliseconds() < 100 )
+        {
+            telemetry.addLine("RUNNING");
+            telemetry.update();
+        }
+        outtakeMotor.setPower(0);
+        outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
+    public void raiseLvl2()
+    {
+        outtakeMotor.setTargetPosition(250);
+        outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        outtakeMotor.setPower(.5);
+        runtime.reset();
+        while(opModeIsActive() && runtime.milliseconds() < 500 )
+        {
+            telemetry.addLine("RUNNING");
+            telemetry.update();
+        }
+        outtakeMotor.setPower(0);
+        drop();
+        sleep(100);
+        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        outtakeMotor.setTargetPosition(-250);
+        outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        outtakeMotor.setPower(.5);
+        runtime.reset();
+        while(opModeIsActive() && runtime.milliseconds() < 500 )
+        {
+            telemetry.addLine("RUNNING");
+            telemetry.update();
+        }
+        outtakeMotor.setPower(0);
+        outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
+
+    public void raiseLvl3()
+    {
+        outtakeMotor.setTargetPosition(450);
+        outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        outtakeMotor.setPower(.5);
+        runtime.reset();
+        while(opModeIsActive() && runtime.milliseconds() < 1000 )
+        {
+            telemetry.addLine("RUNNING");
+            telemetry.update();
+        }
+        outtakeMotor.setPower(0);
+        drop();
+        sleep(100);
+        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        outtakeMotor.setTargetPosition(-450);
+        outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        outtakeMotor.setPower(.5);
+        runtime.reset();
+        while(opModeIsActive() && runtime.milliseconds() < 1000 )
+        {
+            telemetry.addLine("RUNNING");
+            telemetry.update();
+        }
+        outtakeMotor.setPower(0);
+        outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
+
+    public void drop()
+    {
+        outtakeGate.setPosition(.5);
+        sleep(500);
+        outtakeGate.setPosition(0);
+    }
+    /*<------- OUTTAKE ------->**/
+
+    /*<------- HELPER ------->*/
     public int ticksToMM(int ticks)
     {
         //Math: ticks/TPR = mm/(pi*wheelDiameter) --> pi*wheelDiameter*ticks/TPR = mm
@@ -248,35 +331,6 @@ public class Auto extends LinearOpMode
         double wheelDiameter = 96;
         return (int) ((millimeters*ticksPerRoto)/(Math.PI*wheelDiameter));
     }
-
-    private void initialize()
-    {
-        /**<----- MOTORS ----->*/
-        fr = hardwareMap.get(DcMotor.class, "fr");
-        fl = hardwareMap.get(DcMotor.class, "fl");
-        br = hardwareMap.get(DcMotor.class, "br");
-        bl = hardwareMap.get(DcMotor.class, "bl");
-        bl.setDirection(DcMotorSimple.Direction.REVERSE);
-        fl.setDirection(DcMotorSimple.Direction.REVERSE);
-        fr.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        /**<----- INTAKE ----->*/
-        intakeMotor = hardwareMap.get(DcMotor.class, "intake");
-        intakeLifterL = hardwareMap.get(Servo.class,"intake lifter left");
-        intakeLifterR = hardwareMap.get(Servo.class, "intake lifter right");
-
-        /**<----- OUTTAKE ----->*/
-        outtakeMotor = hardwareMap.get(DcMotor.class,"outtake");
-        outtakeGate = hardwareMap.get(Servo.class, "outtake gate");
-        outtakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        /**<----- CAROUSEL ----->*/
-        carouselMotor = hardwareMap.get(DcMotor.class,"carousel");
-        carouselMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        resetEncoders();
-    }
-
     private void resetEncoders()
     {
         fr.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -284,10 +338,11 @@ public class Auto extends LinearOpMode
         br.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         bl.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        fr.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        fl.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        br.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        bl.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        outtakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        fr.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        fl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        br.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        bl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
+    /*<------- HELPER ------->*/
 }
