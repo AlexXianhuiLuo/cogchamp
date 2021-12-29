@@ -11,8 +11,8 @@ public class TeleOp15118 extends LinearOpMode {
     public double DRIVETRAIN_SPEED_MODIFIER = 1;
 
     DcMotor fr, fl, br, bl;
-    DcMotor intakeMotor, outtakeMotor, carouselMotor;
-    Servo intakeLifterL, intakeLifterR, outtakeGate;
+    DcMotor intakeMotor, outtakeMotor, carouselMotor, intakeLifter;
+    Servo outtakeGate;
 
     private int LINEAR_SLIDE_BOTTOM_LIMIT;
 
@@ -75,12 +75,10 @@ public class TeleOp15118 extends LinearOpMode {
             {
                 if(intakeLifted)
                 {
-                    intakeLifterL.setPosition(.4);
-                    intakeLifterR.setPosition(-0.5);
+
                 } else
                 {
-                    intakeLifterL.setPosition(-0.7);
-                    intakeLifterR.setPosition(0.7);
+
                 }
                 sleep(500);
                 intakeLifted = !intakeLifted;
@@ -165,8 +163,7 @@ public class TeleOp15118 extends LinearOpMode {
 
         /**<----- INTAKE ----->*/
         intakeMotor = hardwareMap.get(DcMotor.class, "intake");
-        intakeLifterL = hardwareMap.get(Servo.class,"intake lifter left");
-        intakeLifterR = hardwareMap.get(Servo.class, "intake lifter right");
+        intakeLifter = hardwareMap.get(DcMotor.class,"intake lifter");
 
         /**<----- OUTTAKE ----->*/
         outtakeMotor = hardwareMap.get(DcMotor.class,"outtake");
