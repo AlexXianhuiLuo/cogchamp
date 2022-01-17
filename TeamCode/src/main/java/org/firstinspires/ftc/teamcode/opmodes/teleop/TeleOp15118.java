@@ -5,9 +5,12 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name = "Cogchamp TeleOp", group = "TELECHAMP")
 public class TeleOp15118 extends LinearOpMode {
+    public ElapsedTime runtime = new ElapsedTime();
+
     public double DRIVETRAIN_SPEED_MODIFIER = 1;
 
     DcMotor fr, fl, br, bl;
@@ -23,6 +26,8 @@ public class TeleOp15118 extends LinearOpMode {
         initialize();
 
         waitForStart();
+
+        runtime.reset();
 
         LINEAR_SLIDE_BOTTOM_LIMIT = outtakeMotor.getCurrentPosition();
         while(opModeIsActive())
@@ -75,10 +80,10 @@ public class TeleOp15118 extends LinearOpMode {
             {
                 if(intakeLifted)
                 {
-
+                    lowerIntake();
                 } else
                 {
-
+                    liftIntake();
                 }
                 sleep(500);
                 intakeLifted = !intakeLifted;
@@ -176,6 +181,38 @@ public class TeleOp15118 extends LinearOpMode {
         resetEncoders();
     }
 
+    private void liftIntake()
+    {
+        runtime.reset();
+        intakeLifter.setTargetPosition(40);
+        intakeLifter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        intakeLifter.setPower(.5);
+        while(intakeLifter.isBusy() && runtime.milliseconds() < 1000)
+        {
+            telemetry.addLine("RAISING");
+            telemetry.update();
+        }
+        intakeLifter.setPower(0);
+        intakeLifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intakeLifter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    }
+
+    private void lowerIntake()
+    {
+        runtime.reset();
+        intakeLifter.setTargetPosition(-35);
+        intakeLifter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        intakeLifter.setPower(1);
+        while(intakeLifter.isBusy() && runtime.milliseconds() < 500)
+        {
+            telemetry.addLine("LOWERING");
+            telemetry.update();
+        }
+        intakeLifter.setPower(0);
+        intakeLifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intakeLifter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    }
+
     private void resetEncoders()
     {
         fr.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -189,8 +226,6 @@ public class TeleOp15118 extends LinearOpMode {
         br.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         bl.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-        LINEAR_SLIDE_BOTTOM_LIMIT = outtakeMotor.getCurrentPosition();
     }
 
     public void move(double strafe, double forward, double turn)

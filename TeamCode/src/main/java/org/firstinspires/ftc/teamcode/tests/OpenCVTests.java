@@ -57,6 +57,10 @@ public class OpenCVTests extends LinearOpMode {
             telemetry.addData("Theoretical max FPS", camera.getCurrentPipelineMaxFps());
             String pos = pipeline.getPosition();
             telemetry.addData("Starting Position", pos);
+            int[] totals = pipeline.totalGreen();
+            telemetry.addData("Total Left  ", totals[0]);
+            telemetry.addData("Total Center", totals[1]);
+            telemetry.addData("Total Right ", totals[2]);
             telemetry.update();
 
 

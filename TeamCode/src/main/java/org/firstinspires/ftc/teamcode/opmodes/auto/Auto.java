@@ -14,7 +14,7 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 
 public class Auto extends LinearOpMode
 {
-    private static final double GLOBAL_SPEED_MODIFIER = -.75;
+    private static final double GLOBAL_SPEED_MODIFIER = .75;
 
     public ElapsedTime runtime = new ElapsedTime();
 
@@ -26,12 +26,13 @@ public class Auto extends LinearOpMode
 
     Servo outtakeGate;
 
-    Character startingPosition;
+    public String startingPosition;
 
     @Override
     public void runOpMode() throws InterruptedException
     {
         /*<----- OPENCV ----->*/
+        final boolean[] opened = {false};
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
         GreenStartingPositionPipeline pipeline = new GreenStartingPositionPipeline();
@@ -49,37 +50,13 @@ public class Auto extends LinearOpMode
 
         initialize();
 
-        int leftCount = 0, centerCount = 0, rightCount = 0;
-        for(int i = 0; i < 100; i++)
+        int leftCount = 0, centerCount = 0, rightCount = 0, errorCount = 0;
+        while(!isStarted())
         {
-            switch (pipeline.getPosition()) {
-                case "LEFT":
-                    leftCount++;
-                    break;
-                case "CENTER":
-                    centerCount++;
-                    break;
-                case "RIGHT":
-                    rightCount++;
-                    break;
-            }
-            sleep(100);
+            startingPosition = pipeline.getPosition();
+            telemetry.addData("STARTING POSITION >>", startingPosition);
+            telemetry.update();
         }
-        int maxOneTwo = Math.max(leftCount, centerCount);
-        int max = Math.max(maxOneTwo, rightCount);
-        if(max == leftCount)
-        {
-            startingPosition = 'L';
-        } else if(max == centerCount)
-        {
-            startingPosition = 'C';
-        } else
-        {
-            startingPosition = 'R';
-        }
-
-        telemetry.addData("STARTING POSITION >>", startingPosition);
-        telemetry.update();
         waitForStart();
         runtime.reset();
     }
@@ -131,7 +108,6 @@ public class Auto extends LinearOpMode
             br.setTargetPosition(-amount);
             bl.setTargetPosition(-amount);
         }
-        sleep(100);
         go(time_ms);
     }
 
@@ -171,6 +147,37 @@ public class Auto extends LinearOpMode
         go(time_ms);
     }
 
+    public void curveForward(boolean left, int amount, int time_ms)
+    {
+        if(left)
+        {
+            fr.setTargetPosition(0);
+            fl.setTargetPosition(-amount);
+        } else
+        {
+            fr.setTargetPosition(-amount);
+            fl.setTargetPosition(0);
+        }
+        br.setTargetPosition(-amount);
+        bl.setTargetPosition(-amount);
+        go(time_ms);
+    }
+    public void curveBackward(boolean left, int amount, int time_ms)
+    {
+        if(left)
+        {
+            br.setTargetPosition(0);
+            bl.setTargetPosition(-amount);
+        } else
+        {
+            br.setTargetPosition(-amount);
+            bl.setTargetPosition(0);
+        }
+        fr.setTargetPosition(-amount);
+        fl.setTargetPosition(-amount);
+        go(time_ms);
+    }
+
     public void setMotorPower(double power)
     {
         fl.setPower(power);
@@ -181,17 +188,21 @@ public class Auto extends LinearOpMode
 
     private void go(int time_ms)
     {
-        runtime.reset();
         fr.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         fl.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         br.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         bl.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         setMotorPower(GLOBAL_SPEED_MODIFIER);
 
+        runtime.reset();
         while(opModeIsActive() && runtime.milliseconds() < time_ms )
         {
-            telemetry.addLine("RUNNING");
+            telemetry.addData("TASK >>", "MOVING");
             telemetry.update();
+            if(!fr.isBusy() && !fl.isBusy() && !br.isBusy() && !bl.isBusy())
+            {
+                break;
+            }
         }
         setMotorPower(0);
 
@@ -205,7 +216,7 @@ public class Auto extends LinearOpMode
         br.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         bl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        telemetry.addLine("STOPPED");
+        telemetry.addData("TASK >>", "STOPPED");
         telemetry.update();
     }
     /*<------- MOVEMENT ------->*/
@@ -221,29 +232,61 @@ public class Auto extends LinearOpMode
             intakeMotor.setPower(0);
         }
     }
+    private void liftIntake()
+    {
+        runtime.reset();
+        intakeLifter.setTargetPosition(40);
+        intakeLifter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        intakeLifter.setPower(1);
+        while(intakeLifter.isBusy() && runtime.milliseconds() < 1000)
+        {
+            telemetry.addLine("RAISING");
+            telemetry.update();
+        }
+        intakeLifter.setPower(0);
+        intakeLifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intakeLifter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    }
+
+    private void lowerIntake()
+    {
+        runtime.reset();
+        intakeLifter.setTargetPosition(-35);
+        intakeLifter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        intakeLifter.setPower(1);
+        while(intakeLifter.isBusy() && runtime.milliseconds() < 500)
+        {
+            telemetry.addLine("LOWERING");
+            telemetry.update();
+        }
+        intakeLifter.setPower(0);
+        intakeLifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intakeLifter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    }
     /*<------- INTAKE ------->*/
 
     /*<------- OUTTAKE ------->*/
+    //TODO: Increase speed once we are sure it won't break
     public void raiseLvl1()
     {
-        outtakeMotor.setTargetPosition(50);
+        outtakeMotor.setTargetPosition(600);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(.5);
+        outtakeMotor.setPower(.75);
         runtime.reset();
-        while(opModeIsActive() && runtime.milliseconds() < 100 )
+        while(opModeIsActive() && runtime.milliseconds() < 10000 && outtakeMotor.isBusy())
         {
             telemetry.addLine("RUNNING");
             telemetry.update();
         }
         outtakeMotor.setPower(0);
         drop();
-        sleep(100);
-        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        outtakeMotor.setTargetPosition(-50);
+        sleep(200);
+        outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        outtakeMotor.setTargetPosition(0);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(.5);
+        outtakeMotor.setPower(.75);
         runtime.reset();
-        while(opModeIsActive() && runtime.milliseconds() < 100 )
+        while(opModeIsActive() && runtime.milliseconds() < 10000 && outtakeMotor.isBusy())
         {
             telemetry.addLine("RUNNING");
             telemetry.update();
@@ -254,24 +297,24 @@ public class Auto extends LinearOpMode
 
     public void raiseLvl2()
     {
-        outtakeMotor.setTargetPosition(250);
+        outtakeMotor.setTargetPosition(1000);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(.5);
+        outtakeMotor.setPower(.75);
         runtime.reset();
-        while(opModeIsActive() && runtime.milliseconds() < 500 )
+        while(opModeIsActive() && runtime.milliseconds() < 5000 && outtakeMotor.isBusy())
         {
             telemetry.addLine("RUNNING");
             telemetry.update();
         }
         outtakeMotor.setPower(0);
         drop();
-        sleep(100);
-        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        outtakeMotor.setTargetPosition(-250);
+        sleep(200);
+        outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        outtakeMotor.setTargetPosition(0);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(.5);
+        outtakeMotor.setPower(.75);
         runtime.reset();
-        while(opModeIsActive() && runtime.milliseconds() < 500 )
+        while(opModeIsActive() && runtime.milliseconds() < 5000 && outtakeMotor.isBusy())
         {
             telemetry.addLine("RUNNING");
             telemetry.update();
@@ -282,11 +325,11 @@ public class Auto extends LinearOpMode
 
     public void raiseLvl3()
     {
-        outtakeMotor.setTargetPosition(450);
+        outtakeMotor.setTargetPosition(1900);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(.5);
+        outtakeMotor.setPower(.75);
         runtime.reset();
-        while(opModeIsActive() && runtime.milliseconds() < 1000 )
+        while(opModeIsActive() && runtime.milliseconds() < 5000 && outtakeMotor.isBusy())
         {
             telemetry.addLine("RUNNING");
             telemetry.update();
@@ -294,12 +337,12 @@ public class Auto extends LinearOpMode
         outtakeMotor.setPower(0);
         drop();
         sleep(100);
-        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        outtakeMotor.setTargetPosition(-450);
+        outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        outtakeMotor.setTargetPosition(0);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(.5);
+        outtakeMotor.setPower(.75);
         runtime.reset();
-        while(opModeIsActive() && runtime.milliseconds() < 1000 )
+        while(opModeIsActive() && runtime.milliseconds() < 5000 && outtakeMotor.isBusy())
         {
             telemetry.addLine("RUNNING");
             telemetry.update();
@@ -338,11 +381,13 @@ public class Auto extends LinearOpMode
         br.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         bl.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intakeLifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         fr.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         fl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         br.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         bl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        intakeLifter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
     /*<------- HELPER ------->*/
 }

@@ -9,24 +9,24 @@ public class BlueLeftAuto extends Auto
     @Override
     public void runOpMode() throws InterruptedException {
         super.runOpMode();
-        double mmsToTurn = 419.1*Math.PI;
-        strafe(true, mmToTick(1000), 5000); //TODO: Replace amount
-        forwards(true, mmToTick(1000), 5000); //TODO: Replace Amount
-//        if(startingPosition == 'L')
+
+//        if(startingPosition == "LEFT")
 //        {
 //            raiseLvl1();
-//        } else if(startingPosition == 'C')
+//        } else if(startingPosition == "CENTER")
 //        {
 //            raiseLvl2();
-//        } else if(startingPosition == 'R')
+//        } else if(startingPosition == "RIGHT")
 //        {
 //            raiseLvl3();
 //        }
-//        drop();
-//        lowerOuttake();
-        forwards(false, mmToTick(1000), 5000); //TODO: Replace amount
-        turn(true, mmToTick((int) mmsToTurn/4), 5000);
-        forwards(true, mmToTick(1000), 5000); //TODO: Replace Amount
+
+        raiseLvl1();
+        sleep(3000);
+        raiseLvl2();
+        sleep(3000);
+        raiseLvl3();
+        sleep(3000);
         while(opModeIsActive())
         {
             sleep(100);
