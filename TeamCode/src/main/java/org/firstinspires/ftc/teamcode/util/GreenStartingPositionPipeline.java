@@ -13,6 +13,8 @@ import org.openftc.easyopencv.PipelineRecordingParameters;
 
 public class GreenStartingPositionPipeline extends OpenCvPipeline
 {
+    private int threshold = 25;
+
     public enum StartingPosition
     {
         LEFT,
@@ -65,7 +67,7 @@ public class GreenStartingPositionPipeline extends OpenCvPipeline
         {
             for(int j = 0; j < 640; j++)
             {
-                if(copyMat.get(i, j)[1] > copyMat.get(i, j)[0] && copyMat.get(i, j)[1] > copyMat.get(i, j)[2] )
+                if(copyMat.get(i, j)[1] > (copyMat.get(i, j)[0] + threshold) && copyMat.get(i, j)[1] > (copyMat.get(i, j)[2] + threshold))
                 {
                     if(j < 213)
                     {
@@ -77,8 +79,6 @@ public class GreenStartingPositionPipeline extends OpenCvPipeline
                         countR ++;
                     }
                 }
-
-
             }
         }
         total1 = countL;

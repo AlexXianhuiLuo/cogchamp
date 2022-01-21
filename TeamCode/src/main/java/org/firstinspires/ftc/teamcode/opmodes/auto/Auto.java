@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.opmodes.auto;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -14,7 +15,7 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 
 public class Auto extends LinearOpMode
 {
-    private static final double GLOBAL_SPEED_MODIFIER = .75;
+    public double GLOBAL_SPEED_MODIFIER = .75;
 
     public ElapsedTime runtime = new ElapsedTime();
 
@@ -25,6 +26,8 @@ public class Auto extends LinearOpMode
     DcMotor intakeMotor, outtakeMotor, carouselMotor, intakeLifter;
 
     Servo outtakeGate;
+
+    ColorSensor colorSensor;
 
     public String startingPosition;
 
@@ -78,6 +81,9 @@ public class Auto extends LinearOpMode
         /*<----- INTAKE ----->*/
         intakeMotor = hardwareMap.get(DcMotor.class, "intake");
         intakeLifter = hardwareMap.get(DcMotor.class, "intake lifter");
+        intakeLifter.setDirection(DcMotorSimple.Direction.REVERSE);
+        intakeLifter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        colorSensor = hardwareMap.get(ColorSensor.class, "color sensor");
 
         /*<----- OUTTAKE ----->*/
         outtakeMotor = hardwareMap.get(DcMotor.class,"outtake");
@@ -131,7 +137,7 @@ public class Auto extends LinearOpMode
 
     public void turn(boolean left, int amount, int time_ms)
     {
-        if(!left)
+        if(left)
         {
             fr.setTargetPosition(-amount);
             fl.setTargetPosition(amount);
@@ -144,6 +150,15 @@ public class Auto extends LinearOpMode
             br.setTargetPosition(-amount);
             bl.setTargetPosition(amount);
         }
+        go(time_ms);
+    }
+
+    public void goToPosition(int frPos, int flPos, int brPos, int blPos, int time_ms)
+    {
+        fr.setTargetPosition(frPos);
+        fl.setTargetPosition(flPos);
+        br.setTargetPosition(brPos);
+        bl.setTargetPosition(blPos);
         go(time_ms);
     }
 
@@ -222,17 +237,28 @@ public class Auto extends LinearOpMode
     /*<------- MOVEMENT ------->*/
 
     /*<------- INTAKE ------->*/
-    public void intake()
+    public int[] intake()
     {
+        int[] motorValues = {fr.getCurrentPosition(), fl.getCurrentPosition(), br.getCurrentPosition(), bl.getCurrentPosition()};
         if(intakeMotor.getPower() == 0)
         {
-            intakeMotor.setPower(1);
+            intakeMotor.setPower(.75);
+            setMotorPower(.25);
+            while(colorSensor.red() < 50)
+            {
+
+            }
+            setMotorPower(0);
+            intakeMotor.setPower(0);
+            int[] newValues = {fr.getCurrentPosition(), fl.getCurrentPosition(), br.getCurrentPosition(), bl.getCurrentPosition()};
+            return new int[] {motorValues[0] - newValues[0], motorValues[1] - newValues[1], motorValues[2] - newValues[2], motorValues[3] - newValues[3]};
         } else
         {
             intakeMotor.setPower(0);
         }
+        return null;
     }
-    private void liftIntake()
+    public void liftIntake()
     {
         runtime.reset();
         intakeLifter.setTargetPosition(40);
@@ -244,14 +270,13 @@ public class Auto extends LinearOpMode
             telemetry.update();
         }
         intakeLifter.setPower(0);
-        intakeLifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intakeLifter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
-    private void lowerIntake()
+    public void lowerIntake()
     {
         runtime.reset();
-        intakeLifter.setTargetPosition(-35);
+        intakeLifter.setTargetPosition(-40);
         intakeLifter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         intakeLifter.setPower(1);
         while(intakeLifter.isBusy() && runtime.milliseconds() < 500)
@@ -261,19 +286,37 @@ public class Auto extends LinearOpMode
         }
         intakeLifter.setPower(0);
         intakeLifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        intakeLifter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intakeLifter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
     /*<------- INTAKE ------->*/
 
     /*<------- OUTTAKE ------->*/
     //TODO: Increase speed once we are sure it won't break
+
+    //TODO: Fix, doesn't stop at starting position
+//    public void resetLift()
+//    {
+//        outtakeMotor.setTargetPosition(outtakeMotor.getCurrentPosition() * -1);
+//        outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//        outtakeMotor.setPower(.75);
+//        runtime.reset();
+//        while(opModeIsActive() && runtime.milliseconds() < 5000 && outtakeMotor.isBusy())
+//        {
+//            telemetry.addLine("RUNNING");
+//            telemetry.update();
+//        }
+//        outtakeMotor.setPower(0);
+//        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//    }
+
     public void raiseLvl1()
     {
         outtakeMotor.setTargetPosition(600);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(.75);
+        outtakeMotor.setPower(1);
         runtime.reset();
-        while(opModeIsActive() && runtime.milliseconds() < 10000 && outtakeMotor.isBusy())
+        while(opModeIsActive() && runtime.milliseconds() < 5000 && outtakeMotor.isBusy())
         {
             telemetry.addLine("RUNNING");
             telemetry.update();
@@ -281,25 +324,27 @@ public class Auto extends LinearOpMode
         outtakeMotor.setPower(0);
         drop();
         sleep(200);
+        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        outtakeMotor.setTargetPosition(0);
+        outtakeMotor.setTargetPosition(-600);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(.75);
+        outtakeMotor.setPower(1);
         runtime.reset();
-        while(opModeIsActive() && runtime.milliseconds() < 10000 && outtakeMotor.isBusy())
+        while(opModeIsActive() && runtime.milliseconds() < 5000 && outtakeMotor.isBusy())
         {
             telemetry.addLine("RUNNING");
             telemetry.update();
         }
         outtakeMotor.setPower(0);
+        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
     public void raiseLvl2()
     {
-        outtakeMotor.setTargetPosition(1000);
+        outtakeMotor.setTargetPosition(1200);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(.75);
+        outtakeMotor.setPower(1);
         runtime.reset();
         while(opModeIsActive() && runtime.milliseconds() < 5000 && outtakeMotor.isBusy())
         {
@@ -309,10 +354,11 @@ public class Auto extends LinearOpMode
         outtakeMotor.setPower(0);
         drop();
         sleep(200);
+        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        outtakeMotor.setTargetPosition(0);
+        outtakeMotor.setTargetPosition(-1200);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(.75);
+        outtakeMotor.setPower(1);
         runtime.reset();
         while(opModeIsActive() && runtime.milliseconds() < 5000 && outtakeMotor.isBusy())
         {
@@ -320,6 +366,7 @@ public class Auto extends LinearOpMode
             telemetry.update();
         }
         outtakeMotor.setPower(0);
+        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
@@ -327,7 +374,7 @@ public class Auto extends LinearOpMode
     {
         outtakeMotor.setTargetPosition(1900);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(.75);
+        outtakeMotor.setPower(1);
         runtime.reset();
         while(opModeIsActive() && runtime.milliseconds() < 5000 && outtakeMotor.isBusy())
         {
@@ -337,10 +384,11 @@ public class Auto extends LinearOpMode
         outtakeMotor.setPower(0);
         drop();
         sleep(100);
+        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        outtakeMotor.setTargetPosition(0);
+        outtakeMotor.setTargetPosition(-1900);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(.75);
+        outtakeMotor.setPower(1);
         runtime.reset();
         while(opModeIsActive() && runtime.milliseconds() < 5000 && outtakeMotor.isBusy())
         {
@@ -348,6 +396,7 @@ public class Auto extends LinearOpMode
             telemetry.update();
         }
         outtakeMotor.setPower(0);
+        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 

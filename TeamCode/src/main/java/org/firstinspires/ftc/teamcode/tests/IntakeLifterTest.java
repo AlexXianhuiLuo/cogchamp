@@ -51,14 +51,13 @@ public class IntakeLifterTest extends LinearOpMode
             telemetry.update();
         }
         intakeLifter.setPower(0);
-        intakeLifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intakeLifter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     private void lowerIntake()
     {
         runtime.reset();
-        intakeLifter.setTargetPosition(-35);
+        intakeLifter.setTargetPosition(0);
         intakeLifter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         intakeLifter.setPower(1);
         while(intakeLifter.isBusy() && runtime.milliseconds() < 500)
@@ -67,7 +66,6 @@ public class IntakeLifterTest extends LinearOpMode
             telemetry.update();
         }
         intakeLifter.setPower(0);
-        intakeLifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intakeLifter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 

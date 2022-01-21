@@ -17,7 +17,7 @@ public class TeleOp15118 extends LinearOpMode {
     DcMotor intakeMotor, outtakeMotor, carouselMotor, intakeLifter;
     Servo outtakeGate;
 
-    private int LINEAR_SLIDE_BOTTOM_LIMIT;
+    public ElapsedTime loopTime = new ElapsedTime();
 
     private boolean intakeLifted = false;
 
@@ -29,32 +29,31 @@ public class TeleOp15118 extends LinearOpMode {
 
         runtime.reset();
 
-        LINEAR_SLIDE_BOTTOM_LIMIT = outtakeMotor.getCurrentPosition();
         while(opModeIsActive())
         {
+            double loopStart = loopTime.milliseconds();
             telemetry.addData("OUTTAKE ENCODER POSITION >>", outtakeMotor.getCurrentPosition());
             /**<----- DRIVETRAIN ----->*/
             if(gamepad1.left_stick_x != 0 || gamepad1.right_stick_x != 0 || gamepad1.left_stick_y != 0)
             {
                 move(-gamepad1.left_stick_x, -gamepad1.right_stick_x, -gamepad1.left_stick_y);
-            }
-            if(gamepad1.dpad_up)
+            } else if(gamepad1.dpad_up)
             {
                 move(0, 0, .5);
             }
-            if(gamepad1.dpad_left)
+            else if(gamepad1.dpad_left)
             {
                 move(.5, 0, 0);
             }
-            if(gamepad1.dpad_down)
+            else if(gamepad1.dpad_down)
             {
                 move(0, 0, -.5);
             }
-            if(gamepad1.dpad_right)
+            else if(gamepad1.dpad_right)
             {
                 move(-.5,0,0);
             }
-            if(gamepad1.left_stick_x == 0 || gamepad1.left_stick_y == 0 || gamepad1.right_stick_x == 0)
+            if(gamepad1.left_stick_x == 0 && gamepad1.left_stick_y == 0 && gamepad1.right_stick_x == 0)
             {
                 move(0, 0, 0);
             }
@@ -78,15 +77,17 @@ public class TeleOp15118 extends LinearOpMode {
             }
             if(gamepad2.x)
             {
-                if(intakeLifted)
+                if(!intakeLifter.isBusy())
                 {
-                    lowerIntake();
-                } else
-                {
-                    liftIntake();
+                    intakeLifted = (intakeLifter.getTargetPosition() > 0);
+                    if(intakeLifted)
+                    {
+                        lowerIntake();
+                    } else
+                    {
+                        liftIntake();
+                    }
                 }
-                sleep(500);
-                intakeLifted = !intakeLifted;
             }
             /**<----- INTAKE ----->*/
 
@@ -96,47 +97,28 @@ public class TeleOp15118 extends LinearOpMode {
                 if(gamepad2.right_trigger != 0)
                 {
                     outtakeMotor.setPower(1);
-                } else if(gamepad2.left_trigger != 0 && outtakeMotor.getCurrentPosition() >= LINEAR_SLIDE_BOTTOM_LIMIT)
+                }
+                else if(gamepad2.left_trigger != 0 && outtakeMotor.getCurrentPosition() >= 0)
                 {
                     outtakeMotor.setPower(-1);
                 }
-            } else
-            {
-                outtakeMotor.setPower(0);
             }
-            if(gamepad2.right_bumper)
+            else if(gamepad2.right_bumper)
             {
                 outtakeMotor.setPower(.5);
             }
-            if(gamepad2.left_bumper)
+            else if(gamepad2.left_bumper)
             {
                 outtakeMotor.setPower(-.5);
             }
+            else
+            {
+                outtakeMotor.setPower(0);
+            }
             if(gamepad2.a)
             {
-                outtakeGate.setPosition(.5);
-                sleep(250);
-                outtakeGate.setPosition(0);
+                drop();
             }
-            if(gamepad2.b)
-            {
-                outtakeGate.setPosition(.5);
-                sleep(500);
-                outtakeGate.setPosition(0);
-            }
-            if(gamepad2.y)
-            {
-                outtakeMotor.setTargetPosition(0);
-                outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                outtakeMotor.setPower(1);
-                while(outtakeMotor.isBusy())
-                {
-                    sleep(10);
-                }
-                outtakeMotor.setPower(0);
-                outtakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            }
-            //if(outtakeMotor.getCurrentPosition() >= 1000)
             /**<----- OUTTAKE ----->*/
 
             /**<----- CAROUSEL ----->*/
@@ -153,6 +135,7 @@ public class TeleOp15118 extends LinearOpMode {
                 carouselMotor.setPower(0);
             }
             /**<----- CAROUSEL ----->*/
+            telemetry.addData("Loop Time",loopTime.milliseconds() - loopStart);
             telemetry.update();
         }
     }
@@ -164,11 +147,12 @@ public class TeleOp15118 extends LinearOpMode {
         fl = hardwareMap.get(DcMotor.class, "fl");
         br = hardwareMap.get(DcMotor.class, "br");
         bl = hardwareMap.get(DcMotor.class, "bl");
-        fl.setDirection(DcMotorSimple.Direction.REVERSE);
 
         /**<----- INTAKE ----->*/
         intakeMotor = hardwareMap.get(DcMotor.class, "intake");
         intakeLifter = hardwareMap.get(DcMotor.class,"intake lifter");
+        intakeLifter.setDirection(DcMotorSimple.Direction.REVERSE);
+        intakeLifter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         /**<----- OUTTAKE ----->*/
         outtakeMotor = hardwareMap.get(DcMotor.class,"outtake");
@@ -186,7 +170,7 @@ public class TeleOp15118 extends LinearOpMode {
         runtime.reset();
         intakeLifter.setTargetPosition(40);
         intakeLifter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        intakeLifter.setPower(.5);
+        intakeLifter.setPower(1);
         while(intakeLifter.isBusy() && runtime.milliseconds() < 1000)
         {
             telemetry.addLine("RAISING");
@@ -194,13 +178,13 @@ public class TeleOp15118 extends LinearOpMode {
         }
         intakeLifter.setPower(0);
         intakeLifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        intakeLifter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intakeLifter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
     private void lowerIntake()
     {
         runtime.reset();
-        intakeLifter.setTargetPosition(-35);
+        intakeLifter.setTargetPosition(-40);
         intakeLifter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         intakeLifter.setPower(1);
         while(intakeLifter.isBusy() && runtime.milliseconds() < 500)
@@ -210,21 +194,12 @@ public class TeleOp15118 extends LinearOpMode {
         }
         intakeLifter.setPower(0);
         intakeLifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        intakeLifter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intakeLifter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
     private void resetEncoders()
     {
-        fr.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        fl.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        br.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        bl.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        fr.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        fl.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        br.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        bl.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         outtakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
@@ -238,5 +213,12 @@ public class TeleOp15118 extends LinearOpMode {
         fr.setPower(forward - turn + strafe);
         bl.setPower(forward - turn - strafe);
         br.setPower(forward + turn - strafe);
+    }
+
+    public void drop()
+    {
+        outtakeGate.setPosition(.5);
+        sleep(500);
+        outtakeGate.setPosition(0);
     }
 }
