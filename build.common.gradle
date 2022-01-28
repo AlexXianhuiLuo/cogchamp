@@ -23,7 +23,7 @@ def useProguard = false
 
 android {
 
-    compileSdkVersion 29
+    compileSdkVersion 31
 
     signingConfigs {
         release {
@@ -55,7 +55,7 @@ android {
         applicationId 'com.qualcomm.ftcrobotcontroller'
         minSdkVersion 23
         //noinspection ExpiredTargetSdkVersion
-        targetSdkVersion 28
+        targetSdkVersion 31
         multiDexEnabled !useProguard
 
         /**
@@ -67,8 +67,8 @@ android {
          * We accomplish this with the help of a funky little Groovy script that maintains that
          * correspondence automatically.
          *
-         * @see <a href="http://developer.android.com/tools/building/configuring-gradle.html">Configure Your Build</a>
-         * @see <a href="http://developer.android.com/tools/publishing/versioning.html">Versioning Your App</a>
+         * @see "http://developer.android.com/tools/building/configuring-gradle.html">Configure Your Build
+         * @see "http://developer.android.com/tools/publishing/versioning.html">Versioning Your App
          */
         def manifestFile = project(':FtcRobotController').file('src/main/AndroidManifest.xml');
         def manifestText = manifestFile.getText()

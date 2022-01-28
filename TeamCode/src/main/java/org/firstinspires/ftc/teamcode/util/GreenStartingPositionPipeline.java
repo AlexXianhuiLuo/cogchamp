@@ -84,8 +84,8 @@ public class GreenStartingPositionPipeline extends OpenCvPipeline
         total1 = countL;
         total2 = countC;
         total3 = countR;
-        int maxOneTwo = Math.max(countL, countC);
-        int max = Math.max(maxOneTwo, countR);
+        int maxOneTwo = Math.max(countR, countC);
+        int max = Math.max(maxOneTwo, countL);
 
         if(max == countL)
         {
