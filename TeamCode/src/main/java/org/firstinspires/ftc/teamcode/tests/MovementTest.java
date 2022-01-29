@@ -2,12 +2,12 @@ package org.firstinspires.ftc.teamcode.tests;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-
-import org.firstinspires.ftc.teamcode.util.Drivetrain;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 @TeleOp(name = "DRIVETRAIN TEST", group = "TESTCHAMP")
 public class MovementTest extends LinearOpMode {
-    Drivetrain drivetrain;
+    DcMotor fl, fr, bl, br;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -15,44 +15,51 @@ public class MovementTest extends LinearOpMode {
         waitForStart();
         while(opModeIsActive())
         {
-            if(gamepad1.left_bumper)
+            if(gamepad1.left_stick_x != 0 || gamepad1.left_stick_y != 0 || gamepad1.right_stick_x != 0)
             {
-                drivetrain.setSpeed(.5);
-            } else
-            {
-                drivetrain.setSpeed(1);
+                move(gamepad1.left_stick_x, gamepad1.left_stick_y, gamepad1.right_stick_x);
             }
-            if(gamepad1.left_stick_x != 0 || gamepad1.right_stick_x != 0 || gamepad1.left_stick_y != 0)
+            else if(gamepad1.dpad_up)
             {
-                drivetrain.move(-gamepad1.left_stick_x, -gamepad1.right_stick_x, -gamepad1.left_stick_y);
-            } else if(gamepad1.dpad_up)
-            {
-                drivetrain.move(0, 0, .5);
-            }
-            else if(gamepad1.dpad_left)
-            {
-                drivetrain.move(.5, 0, 0);
+                move(0, -.5, 0);
             }
             else if(gamepad1.dpad_down)
             {
-                drivetrain.move(0, 0, -.5);
+                move(0, .5, 0);
+            }
+            else if(gamepad1.dpad_left)
+            {
+                move(-.5, 0, 0);
             }
             else if(gamepad1.dpad_right)
             {
-                drivetrain.move(-.5,0,0);
-            }
-            else
+                move(.5, 0, 0);
+            } else
             {
-                drivetrain.move(0, 0, 0);
+                move(0,0,0);
             }
         }
+    }
+    public void move(double strafe, double forward, double turn)
+    {
+        forward *= -1;
+
+        fl.setPower(forward + turn + strafe);
+        fr.setPower(forward - turn - strafe);
+        bl.setPower(forward + turn - strafe);
+        br.setPower(forward - turn + strafe);
     }
 
     public void initialize()
     {
         /**<----- MOTORS ----->*/
-        drivetrain = new Drivetrain(hardwareMap);
-        drivetrain.initialize();
-        drivetrain.setMode("TELEOP");
+        fl = hardwareMap.get(DcMotor.class, "fl");
+        fr = hardwareMap.get(DcMotor.class, "fr");
+        bl = hardwareMap.get(DcMotor.class, "bl");
+        br = hardwareMap.get(DcMotor.class, "br");
+
+
+        bl.setDirection(DcMotorSimple.Direction.REVERSE);
+        fr.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 }

@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.util;
 
+import com.acmerobotics.roadrunner.control.PIDCoefficients;
+import com.acmerobotics.roadrunner.control.PIDFController;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -11,7 +13,11 @@ public class Drivetrain
         NONE, AUTO, TELE;
     }
 
-    public static double DRIVETRAIN_SPEED_MODIFIER = 1;
+    PIDCoefficients coeffs;
+
+    PIDFController controller;
+
+    public double DRIVETRAIN_SPEED_MODIFIER = 1;
 
     HardwareMap hw;
 
@@ -58,6 +64,11 @@ public class Drivetrain
 
         setEncoderMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         setEncoderMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+
+        coeffs = new PIDCoefficients(0, 0, 0);
+        controller = new PIDFController(coeffs);
+        controller.setInputBounds(0.0, 2.0 * Math.PI);
     }
 
     public void setMode(String newMode)
