@@ -1,9 +1,11 @@
 package org.firstinspires.ftc.teamcode.opmodes.auto;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 @Autonomous(name = "RED RIGHT", group = "RED")
+@Disabled //Remaking this with roadrunner
 public class RedRightAuto extends Auto
 {
     String path;
