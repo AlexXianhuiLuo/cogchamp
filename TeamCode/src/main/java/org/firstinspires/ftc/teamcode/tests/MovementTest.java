@@ -1,11 +1,13 @@
 package org.firstinspires.ftc.teamcode.tests;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 @TeleOp(name = "DRIVETRAIN TEST", group = "TESTCHAMP")
+@Disabled
 public class MovementTest extends LinearOpMode {
     DcMotor fl, fr, bl, br;
 
@@ -57,6 +59,7 @@ public class MovementTest extends LinearOpMode {
         fr = hardwareMap.get(DcMotor.class, "fr");
         bl = hardwareMap.get(DcMotor.class, "bl");
         br = hardwareMap.get(DcMotor.class, "br");
+
 
 
         bl.setDirection(DcMotorSimple.Direction.REVERSE);

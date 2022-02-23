@@ -5,7 +5,7 @@ import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.openftc.easyopencv.OpenCvPipeline;
 
-public class GreenStartingPositionPipeline extends OpenCvPipeline
+public class MissingColorDetectionPipeline extends OpenCvPipeline
 {
     private final int threshold = 25;
 
@@ -16,6 +16,8 @@ public class GreenStartingPositionPipeline extends OpenCvPipeline
         RIGHT,
         NONE
     }
+
+    public char colour = 'E';
 
     private StartingPosition position = StartingPosition.NONE;
 
@@ -42,6 +44,13 @@ public class GreenStartingPositionPipeline extends OpenCvPipeline
 
     int total1, total2, total3;
 
+
+
+    public void setColour(char colour)
+    {
+        this.colour = colour;
+    }
+
     @Override
     public Mat processFrame(Mat input)
     {
@@ -50,16 +59,33 @@ public class GreenStartingPositionPipeline extends OpenCvPipeline
         {
             for(int j = 0; j < 640; j++)
             {
-                if(input.get(i, j)[1] > (input.get(i, j)[0] + threshold) && input.get(i, j)[1] > (input.get(i, j)[2] + threshold))
+                if(colour == 'R')
                 {
-                    if(j < 213)
+                    if(input.get(i, j)[0] > (input.get(i, j)[1] + threshold) && input.get(i, j)[0] > (input.get(i, j)[2] + threshold))
                     {
-                        countL ++;
-                    } else if(j < 427)
+                        if(j < 213)
+                        {
+                            countL++;
+                        } else if(j < 427)
+                        {
+                            countC++;
+                        } else {
+                            countR++;
+                        }
+                    }
+                } else if(colour == 'B')
+                {
+                    if(input.get(i, j)[2] > (input.get(i, j)[1] + threshold) && input.get(i, j)[2] > (input.get(i, j)[0] + threshold))
                     {
-                        countC ++;
-                    } else {
-                        countR ++;
+                        if(j < 213)
+                        {
+                            countL++;
+                        } else if(j < 427)
+                        {
+                            countC++;
+                        } else {
+                            countR++;
+                        }
                     }
                 }
             }
@@ -67,20 +93,19 @@ public class GreenStartingPositionPipeline extends OpenCvPipeline
         total1 = countL;
         total2 = countC;
         total3 = countR;
-        int maxOneTwo = Math.max(countR, countC);
-        int max = Math.max(maxOneTwo, countL);
+        int maxOneTwo = Math.min(countR, countC);
+        int min = Math.min(maxOneTwo, countL);
 
-        if(max == countL)
+        if(min == countL)
         {
             position = StartingPosition.LEFT;
-        } else if(max == countC)
+        } else if(min == countC)
         {
             position = StartingPosition.CENTER;
         } else
         {
             position = StartingPosition.RIGHT;
         }
-
         return input;
     }
 

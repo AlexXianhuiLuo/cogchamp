@@ -6,8 +6,8 @@ Control Hub
         3 : bl
     Servos
         0 : outtake gate
-        1 : intake lifter left
-        2 : intake lifter right
+        1 : N / A
+        2 : N / A
         3 : N / A
     Digital Devices
         N / A

@@ -9,8 +9,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.util.Drivetrain;
 import org.firstinspires.ftc.teamcode.util.Outtake;
 
-@TeleOp(name = "Cogchamp TeleOp", group = "TELECHAMP")
-public class TeleOp15118 extends LinearOpMode {
+@TeleOp(name = "Not Ian TeleOp", group = "TELECHAMP")
+public class NotIanTeleOp extends LinearOpMode {
     public ElapsedTime runtime = new ElapsedTime();
 
     DcMotor intakeMotor, carouselMotor;
@@ -43,7 +43,7 @@ public class TeleOp15118 extends LinearOpMode {
             }
             if(gamepad1.left_stick_x != 0 || gamepad1.right_stick_x != 0 || gamepad1.left_stick_y != 0)
             {
-                drivetrain.move(-gamepad1.left_stick_x, -gamepad1.right_stick_x, -gamepad1.left_stick_y);
+                drivetrain.move(gamepad1.left_stick_x, gamepad1.right_stick_x, gamepad1.left_stick_y);
             } else if(gamepad1.dpad_right)
             {
                 drivetrain.move(0, 0.25, 0);
@@ -115,7 +115,7 @@ public class TeleOp15118 extends LinearOpMode {
                 }
                 if(gamepad1.right_bumper)
                 {
-                    outtake.smallDrop();
+                    outtake.drop();
                 }
                 if(gamepad2.right_bumper)
                 {

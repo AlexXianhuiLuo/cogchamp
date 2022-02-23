@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.util;
 import com.acmerobotics.roadrunner.control.PIDCoefficients;
 import com.acmerobotics.roadrunner.control.PIDFController;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -40,16 +41,13 @@ public class Drivetrain
     /**<----- TELEOP ----->*/
     public void move(double strafe, double turn, double forward)
     {
-        if(mode.equals(Mode.TELE))
-        {
-            turn *= DRIVETRAIN_SPEED_MODIFIER;
-            forward *= -DRIVETRAIN_SPEED_MODIFIER;
-            strafe *= DRIVETRAIN_SPEED_MODIFIER;
-            fl.setPower(turn + forward + strafe);
-            fr.setPower(turn - forward + strafe);
-            bl.setPower(turn + forward - strafe);
-            br.setPower(turn - forward - strafe);
-        }
+        turn *= -DRIVETRAIN_SPEED_MODIFIER;
+        forward *= DRIVETRAIN_SPEED_MODIFIER;
+        strafe *= -DRIVETRAIN_SPEED_MODIFIER;
+        fl.setPower(forward + turn + strafe);
+        fr.setPower(forward - turn - strafe);
+        bl.setPower(forward + turn - strafe);
+        br.setPower(forward - turn + strafe);
     }
     /**<----- TELEOP ----->*/
 
@@ -62,13 +60,16 @@ public class Drivetrain
         br = hw.get(DcMotor.class, "br");
         bl = hw.get(DcMotor.class, "bl");
 
+        fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        fl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        br.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        bl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        bl.setDirection(DcMotorSimple.Direction.REVERSE);
+        fr.setDirection(DcMotorSimple.Direction.REVERSE);
+
         setEncoderMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         setEncoderMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-
-        coeffs = new PIDCoefficients(0, 0, 0);
-        controller = new PIDFController(coeffs);
-        controller.setInputBounds(0.0, 2.0 * Math.PI);
     }
 
     public void setMode(String newMode)
@@ -121,6 +122,12 @@ public class Drivetrain
         bl.setPower(newPower);
         br.setPower(newPower);
     }
+
+    public int[] getEncoderTicks()
+    {
+        return new int[]
+                {fr.getCurrentPosition(), fl.getCurrentPosition(), br.getCurrentPosition(), bl.getCurrentPosition()};
+    }
     /**<----- HELPER ----->*/
 
     /**<----- AUTO ----->*/
@@ -150,13 +157,13 @@ public class Drivetrain
             if (!left) {
                 fr.setTargetPosition(amount);
                 fl.setTargetPosition(-amount);
-                br.setTargetPosition(amount);
-                bl.setTargetPosition(-amount);
+                br.setTargetPosition(-amount);
+                bl.setTargetPosition(amount);
             } else {
                 fr.setTargetPosition(-amount);
                 fl.setTargetPosition(amount);
-                br.setTargetPosition(-amount);
-                bl.setTargetPosition(amount);
+                br.setTargetPosition(amount);
+                bl.setTargetPosition(-amount);
             }
             go(time_ms);
         }
@@ -169,13 +176,13 @@ public class Drivetrain
             if (!left) {
                 fr.setTargetPosition(-amount);
                 fl.setTargetPosition(amount);
-                br.setTargetPosition(amount);
-                bl.setTargetPosition(-amount);
+                br.setTargetPosition(-amount);
+                bl.setTargetPosition(amount);
             } else {
                 fr.setTargetPosition(amount);
                 fl.setTargetPosition(-amount);
-                br.setTargetPosition(-amount);
-                bl.setTargetPosition(amount);
+                br.setTargetPosition(amount);
+                bl.setTargetPosition(-amount);
             }
             go(time_ms);
         }

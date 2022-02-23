@@ -1,29 +1,43 @@
 package org.firstinspires.ftc.teamcode.opmodes.auto;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.util.Drivetrain;
 import org.firstinspires.ftc.teamcode.util.GreenStartingPositionPipeline;
+import org.firstinspires.ftc.teamcode.util.Outtake;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
 public class Auto extends LinearOpMode
 {
+    private int
+        LVL_1_TIME =  500,
+        LVL_2_TIME = 1000,
+        LVL_3_TIME = 2000;
+
+    private int
+        DROP_TIME = 500;
+
     public ElapsedTime runtime = new ElapsedTime();
 
     public Drivetrain drivetrain;
 
-    OpenCvCamera camera;
+    public Outtake outtake;
 
-    DcMotor intakeMotor, outtakeMotor, carouselMotor, intakeLifter;
+    public OpenCvCamera camera;
 
-    Servo outtakeGate;
+    public DcMotor intakeMotor, carouselMotor;
+
+    public TouchSensor touch;
+
+    public ColorSensor colorSensor;
 
     public String startingPosition;
 
@@ -66,17 +80,13 @@ public class Auto extends LinearOpMode
         drivetrain = new Drivetrain(hardwareMap);
         drivetrain.setMode("AUTO");
 
-        //TODO:REDO THIS WITH NEW INTAKE
-//        /*<----- INTAKE ----->*/
-//        intakeMotor = hardwareMap.get(DcMotor.class, "intake");
-//        intakeLifter = hardwareMap.get(DcMotor.class, "intake lifter");
-//        intakeLifter.setDirection(DcMotorSimple.Direction.REVERSE);
-//        intakeLifter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        /*<----- INTAKE ----->*/
+        intakeMotor = hardwareMap.get(DcMotor.class, "intake");
+        touch = hardwareMap.get(TouchSensor.class, "touch");
+        colorSensor = hardwareMap.get(ColorSensor.class, "colour");
 
         /*<----- OUTTAKE ----->*/
-        outtakeMotor = hardwareMap.get(DcMotor.class,"outtake");
-        outtakeGate = hardwareMap.get(Servo.class, "outtake gate");
-        outtakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        outtake = new Outtake(hardwareMap);
 
         /*<----- CAROUSEL ----->*/
         carouselMotor = hardwareMap.get(DcMotor.class,"carousel");
@@ -84,42 +94,37 @@ public class Auto extends LinearOpMode
     }
 
     /*<------- INTAKE ------->*/
-
     //TODO: IMPLEMENT THIS WITH NEW INTAKE
-//    public void intake()
-//    {
-//
-//    }
-//    public void liftIntake()
-//    {
-//        runtime.reset();
-//        intakeLifter.setTargetPosition(40);
-//        intakeLifter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//        intakeLifter.setPower(1);
-//        while(intakeLifter.isBusy() && runtime.milliseconds() < 1000)
-//        {
-//            telemetry.addLine("RAISING");
-//            telemetry.update();
-//        }
-//        intakeLifter.setPower(0);
-//        intakeLifter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-//    }
-//
-//    public void lowerIntake()
-//    {
-//        runtime.reset();
-//        intakeLifter.setTargetPosition(-40);
-//        intakeLifter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//        intakeLifter.setPower(1);
-//        while(intakeLifter.isBusy() && runtime.milliseconds() < 500)
-//        {
-//            telemetry.addLine("LOWERING");
-//            telemetry.update();
-//        }
-//        intakeLifter.setPower(0);
-//        intakeLifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-//        intakeLifter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//    }
+    public void intake()
+    {
+        int[] ticks = drivetrain.getEncoderTicks();
+        drivetrain.setMotorPower(0.25);
+        intakeMotor.setPower(1);
+        while(touch.isPressed())
+        {
+            telemetry.addData("MODE >>", "PICKING UP");
+            telemetry.update();
+        }
+        drivetrain.setMotorPower(0);
+        intakeMotor.setPower(0.75);
+        while(colorSensor.red() < 125 && colorSensor.blue() < 125 && colorSensor.green() < 125)
+        {
+            telemetry.addData("MODE >>", "INTAKING");
+            telemetry.update();
+        }
+        sleep(500);
+        intakeMotor.setPower(-1);
+        sleep(500);
+        intakeMotor.setPower(0);
+        drivetrain.goToPosition(ticks[0], ticks[1], ticks[2], ticks[3], 5000);
+        telemetry.addData("MODE >>","STOPPED");
+        telemetry.update();
+    }
+
+    public boolean buttonPressed()
+    {
+        return touch.isPressed();
+    }
     /*<------- INTAKE ------->*/
 
     /*<------- OUTTAKE ------->*/
@@ -127,102 +132,33 @@ public class Auto extends LinearOpMode
 
     //TODO: Fix, doesn't stop at starting position
 
-    public void raiseLvl1()
-    {
-        outtakeMotor.setTargetPosition(600);
-        outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(1);
-        runtime.reset();
-        while(opModeIsActive() && runtime.milliseconds() < 5000 && outtakeMotor.isBusy())
-        {
-            telemetry.addLine("RUNNING");
-            telemetry.update();
-        }
-        outtakeMotor.setPower(0);
-        drop();
-        sleep(200);
-        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        outtakeMotor.setTargetPosition(-600);
-        outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(1);
-        runtime.reset();
-        while(opModeIsActive() && runtime.milliseconds() < 5000 && outtakeMotor.isBusy())
-        {
-            telemetry.addLine("RUNNING");
-            telemetry.update();
-        }
-        outtakeMotor.setPower(0);
-        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-    }
-
-    public void raiseLvl2()
-    {
-        outtakeMotor.setTargetPosition(1200);
-        outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(1);
-        runtime.reset();
-        while(opModeIsActive() && runtime.milliseconds() < 5000 && outtakeMotor.isBusy())
-        {
-            telemetry.addLine("RUNNING");
-            telemetry.update();
-        }
-        outtakeMotor.setPower(0);
-        drop();
-        sleep(200);
-        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        outtakeMotor.setTargetPosition(-1200);
-        outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(1);
-        runtime.reset();
-        while(opModeIsActive() && runtime.milliseconds() < 5000 && outtakeMotor.isBusy())
-        {
-            telemetry.addLine("RUNNING");
-            telemetry.update();
-        }
-        outtakeMotor.setPower(0);
-        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-    }
-
-    public void raiseLvl3()
-    {
-        outtakeMotor.setTargetPosition(1900);
-        outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(1);
-        runtime.reset();
-        while(opModeIsActive() && runtime.milliseconds() < 5000 && outtakeMotor.isBusy())
-        {
-            telemetry.addLine("RUNNING");
-            telemetry.update();
-        }
-        outtakeMotor.setPower(0);
-        drop();
-        sleep(100);
-        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        outtakeMotor.setTargetPosition(-1900);
-        outtakeMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        outtakeMotor.setPower(1);
-        runtime.reset();
-        while(opModeIsActive() && runtime.milliseconds() < 5000 && outtakeMotor.isBusy())
-        {
-            telemetry.addLine("RUNNING");
-            telemetry.update();
-        }
-        outtakeMotor.setPower(0);
-        outtakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        outtakeMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-    }
-
-    public void drop()
-    {
-        outtakeGate.setPosition(.5);
+    public void raiseLvl1() throws InterruptedException {
+        outtake.raise1Auto();
+        sleep(LVL_1_TIME);
+        outtake.flatArm();
+        sleep(250);
+        outtake.sleepDrop(500);
+        sleep(250);
+        outtake.angleArm();
         sleep(500);
-        outtakeGate.setPosition(0);
-        sleep(100);
+        outtake.resetLift(LVL_1_TIME);
+    }
+
+    public void raiseLvl2() throws InterruptedException {
+        outtake.raise2Auto();
+        sleep(LVL_2_TIME);
+        outtake.autoDrop();
+        sleep(DROP_TIME);
+        outtake.resetLift(LVL_2_TIME);
+    }
+
+    public void raiseLvl3() throws InterruptedException {
+        outtake.raise3Auto();
+        sleep(LVL_3_TIME);
+        outtake.autoDrop();
+        sleep(DROP_TIME);
+        sleep(500);
+        outtake.resetLift(LVL_3_TIME);
     }
     /*<------- OUTTAKE ------->**/
 
